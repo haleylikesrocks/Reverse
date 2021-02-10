@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+
+int same_file(int fd1, int fd2) {
+    struct stat stat1, stat2;
+    if(fstat(fd1, &stat1) < 0) return -1;
+    if(fstat(fd2, &stat2) < 0) return -1;
+    return (stat1.st_dev == stat2.st_dev) && (stat1.st_ino == stat2.st_ino);
+}
 
 int main(int argc, char **argv)
 {
@@ -17,6 +25,8 @@ int main(int argc, char **argv)
 	if(argc == 1){
 		fpin = stdin;
 		fpout = stdout;
+
+		// printf("%s", stat(fpin).st_ino);
 	}
 	if(argc == 2){
 		fpin = fopen(argv[1], "r");
@@ -41,7 +51,10 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 
-		if(!(strcmp( argv[1], argv[2] ))){
+		int fd1 = fileno(fpin);
+		int fd2 = fileno(fpout);
+
+		if(same_file(fd1, fd2)){
 			fprintf(stderr, "reverse: input and output file must differ\n");
 			exit(1);
 		}
@@ -61,7 +74,6 @@ int main(int argc, char **argv)
 
 	}
 
-	// char file_lines[linecount][max_line];
 	char **file_lines = (char**) malloc(linecount * sizeof(char*));
   for (int i = 0; i < max_line; i++) {
 	  file_lines[i] = (char*) malloc(max_line * sizeof(char));
@@ -72,18 +84,11 @@ int main(int argc, char **argv)
 	for(i = 0; i < linecount; i++){
 		getline(&line, &len, fpin);
 		strcpy(file_lines[i], line);
-		// printf("the text is: %s and i = %d\n\n", file_lines[i], i);
 	}
-
-	// printf("%s", file_lines[1]);
 
 	for(a = linecount - 1; a >= 0; a--){
 		fprintf(fpout, "%s", file_lines[a]);
 	}
-
-	// for (int i = 0; i < max_line; i++) {
-	// 	free(file_lines[i]);
-  // }
 
 exit(0);
 }
